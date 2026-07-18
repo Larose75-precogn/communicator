@@ -1,0 +1,320 @@
+<!-- ================================================================ -->
+<!-- 📘 STRUCTORY - COMMUNICATOR                                      -->
+<!-- Fichier: communicator.html (nom exact, pas .html)               -->
+<!-- ================================================================ -->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Structory</title>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F5F5F0;
+      color: #1A2A3A;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: #00695C;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    
+    .header-title {
+      color: white;
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .header-title span {
+      font-size: 24px;
+    }
+    
+    .header-subtitle {
+      color: rgba(255,255,255,0.8);
+      font-size: 14px;
+      font-weight: 300;
+      font-style: italic;
+    }
+    
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .message-ia {
+      align-self: flex-start;
+      max-width: 80%;
+      background: #E8F5E9;
+      border-radius: 12px 12px 12px 4px;
+      padding: 14px 18px;
+      border-left: 4px solid #00695C;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .message-ia .time {
+      font-size: 11px;
+      color: #999;
+      margin-top: 6px;
+    }
+    
+    .message-user {
+      align-self: flex-end;
+      max-width: 80%;
+      background: #FFF3E0;
+      border-radius: 12px 12px 4px 12px;
+      padding: 14px 18px;
+      border-right: 4px solid #E65100;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .message-user .time {
+      font-size: 11px;
+      color: #999;
+      margin-top: 6px;
+      text-align: right;
+    }
+    
+    .message-system {
+      align-self: center;
+      max-width: 90%;
+      background: #ECEFF1;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #546E7A;
+      font-size: 13px;
+      text-align: center;
+      font-style: italic;
+    }
+    
+    .input-area {
+      flex-shrink: 0;
+      display: flex;
+      gap: 10px;
+      padding: 16px 24px;
+      background: white;
+      border-top: 1px solid #E0E0E0;
+    }
+    
+    .input-area input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #E0E0E0;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    
+    .input-area input:focus {
+      border-color: #00695C;
+    }
+    
+    .input-area button {
+      padding: 12px 24px;
+      background: #00695C;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .input-area button:hover {
+      background: #004D40;
+    }
+    
+    .input-area button:disabled {
+      background: #BDBDBD;
+      cursor: not-allowed;
+    }
+    
+    .footer {
+      flex-shrink: 0;
+      padding: 8px 24px;
+      background: #F5F5F0;
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+      border-top: 1px solid #E8E8E8;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    #chat::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    #chat::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    #chat::-webkit-scrollbar-thumb {
+      background: #BDBDBD;
+      border-radius: 3px;
+    }
+    
+    #chat::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+    
+    @media (max-width: 600px) {
+      .header {
+        padding: 12px 16px;
+      }
+      .header-title {
+        font-size: 17px;
+      }
+      .header-subtitle {
+        font-size: 12px;
+      }
+      #chat {
+        padding: 12px 16px;
+      }
+      .input-area {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+      }
+      .input-area input {
+        font-size: 15px;
+        padding: 10px 14px;
+      }
+      .input-area button {
+        padding: 10px 18px;
+        font-size: 15px;
+      }
+      .message-ia,
+      .message-user {
+        max-width: 92%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <?!= Bibliotheque.getAccountPanelHtml(orgId) ?>
+
+  <div class="header">
+    <div class="header-title">
+      <span>📘</span> Structory
+    </div>
+    <div class="header-subtitle">Raconte-nous ta compta</div>
+  </div>
+  
+  <div id="chat">
+    <div class="message-ia">
+      Bonjour ! 👋<br>
+      Je suis <strong>IAstructory</strong>.<br>
+      Raconte-moi ta compta en français, je m'occupe du reste.<br><br>
+      💡 <em>Exemple : "j'ai payé 45€ au restaurant"</em>
+      <div class="time">IAstructory · maintenant</div>
+    </div>
+  </div>
+  
+  <div class="input-area">
+    <input type="text" id="input" placeholder="Écris ta compta..." autofocus>
+    <button id="send">Envoyer</button>
+  </div>
+  
+  <div class="footer">
+    Structory · La comptabilité qui se raconte
+  </div>
+  
+  <script>
+    const ORG_ID = "<?= orgId ?>";
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+
+    let isProcessing = false;
+    
+    function addMessage(content, type, time = null) {
+      const div = document.createElement('div');
+      div.className = `message-${type}`;
+      const text = content.replace(/\n/g, '<br>');
+      const timeStr = time || new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = `${text}<div class="time">${timeStr}</div>`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text || isProcessing) return;
+      
+      input.value = '';
+      isProcessing = true;
+      sendBtn.disabled = true;
+      sendBtn.textContent = '...';
+      
+      addMessage(text, 'user');
+      
+      google.script.run
+        .withSuccessHandler(function(result) {
+          addMessage(result, 'ia');
+          isProcessing = false;
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Envoyer';
+          input.focus();
+        })
+        .withFailureHandler(function(error) {
+          addMessage(`❌ Erreur: ${error.message}`, 'system');
+          isProcessing = false;
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Envoyer';
+          input.focus();
+        })
+        .communicate(text, ORG_ID);
+    }
+    
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') sendMessage();
+    });
+    
+    setTimeout(() => input.focus(), 100);
+  </script>
+  
+</body>
+</html>

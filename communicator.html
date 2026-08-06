@@ -9,52 +9,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Structory</title>
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+
   <style>
+    /* Palette réelle Structory, reprise directement de structory.ai/style.css (fond #0b0b0f,
+       cartes #17171c, bordures #2b2b33, texte #f4f4f5, accent ambre #f59e0b) — plus l'ancienne
+       palette teal/crème inventée pour Communicator. PreCogn/Navigator gardent leur propre
+       identité (terminal noir/vert), volontairement pas touchés ici. */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #F5F5F0;
-      color: #1A2A3A;
+      font-family: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0b0b0f;
+      color: #f4f4f5;
       height: 100vh;
       display: flex;
       flex-direction: column;
     }
-    
+
     .header {
-      background: #00695C;
-      padding: 16px 24px;
+      background: #17171c;
+      border-bottom: 1px solid #2b2b33;
+      padding: 16px 76px 16px 24px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      flex-direction: column;
+      gap: 4px;
       flex-shrink: 0;
     }
-    
+
+    /* Typo du logo Structory : majuscules, très espacées, géométrique — Orbitron
+       s'en approche nettement mieux qu'une police système. */
     .header-title {
-      color: white;
-      font-size: 20px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      color: #f4f4f5;
+      font-family: 'Orbitron', Arial, sans-serif;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      display: inline-block;
+      width: fit-content;
     }
-    
-    .header-title span {
-      font-size: 24px;
+
+    .header-title .accent-o {
+      color: #f59e0b;
     }
-    
+
     .header-subtitle {
-      color: rgba(255,255,255,0.8);
-      font-size: 14px;
-      font-weight: 300;
+      color: #f59e0b;
+      font-size: 13px;
+      font-weight: 400;
       font-style: italic;
     }
-    
+
     #chat {
       flex: 1;
       overflow-y: auto;
@@ -63,86 +76,194 @@
       flex-direction: column;
       gap: 12px;
     }
-    
+
     .message-ia {
       align-self: flex-start;
       max-width: 80%;
-      background: #E8F5E9;
+      background: #17171c;
       border-radius: 12px 12px 12px 4px;
       padding: 14px 18px;
-      border-left: 4px solid #00695C;
+      border-left: 4px solid #2b2b33;
       line-height: 1.6;
       white-space: pre-wrap;
       word-wrap: break-word;
       animation: fadeIn 0.3s ease;
+      color: #f4f4f5;
     }
-    
+
     .message-ia .time {
       font-size: 11px;
-      color: #999;
+      color: #8b8b93;
       margin-top: 6px;
     }
-    
+
     .message-user {
       align-self: flex-end;
       max-width: 80%;
-      background: #FFF3E0;
+      background: #17171c;
       border-radius: 12px 12px 4px 12px;
       padding: 14px 18px;
-      border-right: 4px solid #E65100;
+      border-right: 4px solid #f59e0b;
       line-height: 1.6;
       white-space: pre-wrap;
       word-wrap: break-word;
       animation: fadeIn 0.3s ease;
+      color: #f4f4f5;
     }
-    
+
     .message-user .time {
       font-size: 11px;
-      color: #999;
+      color: #8b8b93;
       margin-top: 6px;
       text-align: right;
     }
-    
+
     .message-system {
       align-self: center;
       max-width: 90%;
-      background: #ECEFF1;
+      background: #17171c;
+      border: 1px solid #2b2b33;
       border-radius: 8px;
       padding: 10px 16px;
-      color: #546E7A;
+      color: #d1d5db;
       font-size: 13px;
       text-align: center;
       font-style: italic;
     }
-    
+
+    /* Briques Objects/Rules/Flows/Time — mêmes forme+couleur que precogn.org/test et
+       structory.ai/game (retour de Stéphane 2026-08-03 : rester cohérent avec ce langage
+       visuel déjà établi ailleurs dans l'écosystème). Cliquer une brique ouvre un petit menu
+       d'actions possibles pour ce type, qui pré-remplissent le champ de saisie (jamais envoyé
+       automatiquement — l'utilisateur garde la main pour vérifier/compléter avant d'envoyer). */
+    .bricks-bar {
+      display: flex;
+      gap: 14px;
+      padding: 10px 24px;
+      background: #0b0b0f;
+      border-top: 1px solid #2b2b33;
+      align-items: center;
+    }
+    .brick-btn {
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    .brick-btn:hover { transform: scale(1.25); }
+    .brick-square {
+      width: 16px; height: 16px; border-radius: 3px;
+      background: #4285F4; box-shadow: 0 0 10px rgba(66,133,244,.5);
+    }
+    .brick-circle {
+      width: 17px; height: 17px; border-radius: 50%;
+      background: #f4f4f5; box-shadow: 0 0 10px rgba(244,244,245,.5);
+    }
+    .brick-triangle {
+      width: 0; height: 0;
+      border-left: 8px solid transparent; border-right: 8px solid transparent;
+      border-bottom: 15px solid #FF4444;
+      filter: drop-shadow(0 0 8px rgba(255,68,68,.5));
+    }
+    .brick-diamond {
+      width: 14px; height: 14px;
+      background: #CCFF00; transform: rotate(45deg); border-radius: 2px;
+      box-shadow: 0 0 10px rgba(204,255,0,.5);
+    }
+    .brick-label { font-size: 10px; color: #8b8b93; margin-right: -6px; }
+
+    .brick-menu {
+      position: absolute;
+      bottom: 100%;
+      margin-bottom: 8px;
+      background: #17171c;
+      border: 1px solid #2b2b33;
+      border-radius: 8px;
+      padding: 6px;
+      display: none;
+      min-width: 200px;
+      z-index: 20;
+      box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    }
+    .brick-menu.open { display: block; }
+    .brick-menu-item {
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #f4f4f5;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .brick-menu-item:hover { background: #2b2b33; }
+    .brick-wrapper { position: relative; }
+
     .input-area {
       flex-shrink: 0;
       display: flex;
       gap: 10px;
       padding: 16px 24px;
-      background: white;
-      border-top: 1px solid #E0E0E0;
+      background: #0b0b0f;
+      border-top: 1px solid #2b2b33;
     }
-    
+
     .input-area input {
       flex: 1;
       padding: 12px 16px;
-      border: 2px solid #E0E0E0;
+      background: #17171c;
+      border: 2px solid #2b2b33;
       border-radius: 8px;
+      color: #f4f4f5;
       font-size: 16px;
       outline: none;
       transition: border-color 0.2s;
       font-family: inherit;
     }
-    
-    .input-area input:focus {
-      border-color: #00695C;
+
+    .input-area input::placeholder {
+      color: #8b8b93;
     }
-    
+
+    .input-area input:focus {
+      border-color: #f59e0b;
+    }
+
+    /* Curseur "_" clignotant qui invite à taper — visible tant que le champ est vide,
+       disparaît dès la première frappe (voir #blink-cursor.hidden côté JS). */
+    .input-wrapper {
+      position: relative;
+      flex: 1;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+    }
+
+    #blink-cursor {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #f59e0b;
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      pointer-events: none;
+      animation: blink 1s step-start infinite;
+    }
+
+    .input-wrapper input {
+      padding-left: 30px;
+    }
+
+    #blink-cursor.hidden {
+      display: none;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
     .input-area button {
       padding: 12px 24px;
-      background: #00695C;
-      color: white;
+      background: #f59e0b;
+      color: #0b0b0f;
       border: none;
       border-radius: 8px;
       font-size: 16px;
@@ -150,26 +271,27 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    
+
     .input-area button:hover {
-      background: #004D40;
+      background: #d97706;
     }
-    
+
     .input-area button:disabled {
-      background: #BDBDBD;
+      background: #2b2b33;
+      color: #8b8b93;
       cursor: not-allowed;
     }
-    
+
     .footer {
       flex-shrink: 0;
       padding: 8px 24px;
-      background: #F5F5F0;
+      background: #0b0b0f;
       font-size: 12px;
-      color: #999;
+      color: #8b8b93;
       text-align: center;
-      border-top: 1px solid #E8E8E8;
+      border-top: 1px solid #2b2b33;
     }
-    
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -180,24 +302,24 @@
         transform: translateY(0);
       }
     }
-    
+
     #chat::-webkit-scrollbar {
       width: 6px;
     }
-    
+
     #chat::-webkit-scrollbar-track {
       background: transparent;
     }
-    
+
     #chat::-webkit-scrollbar-thumb {
-      background: #BDBDBD;
+      background: #2b2b33;
       border-radius: 3px;
     }
-    
+
     #chat::-webkit-scrollbar-thumb:hover {
-      background: #999;
+      background: #3f3f47;
     }
-    
+
     @media (max-width: 600px) {
       .header {
         padding: 12px 16px;
@@ -228,20 +350,63 @@
         max-width: 92%;
       }
     }
+
+    /* Embed dans sidebar Sheets : pas de scrollbar vertical sur la page */
+    body.embed { overflow: hidden; }
+    html:has(body.embed) { overflow: hidden; }
+    body.embed .input-area { order: 3; }
+    body.embed .bricks-bar { order: 2; }
+    body.embed #chat { order: 1; }
   </style>
 </head>
 
-<body>
+<body class="<?= embed ? 'embed' : '' ?>">
 
+  <? if (!embed) { ?>
   <?!= Bibliotheque.getAccountPanelHtml(orgId) ?>
 
   <div class="header">
-    <div class="header-title">
-      <span>📘</span> Structory
-    </div>
+    <a class="header-title" href="https://structory.ai" target="_blank" rel="noopener"><?= brandName ?></a>
     <div class="header-subtitle">Raconte-nous ta compta</div>
   </div>
-  
+
+  <? } ?>
+
+  <div class="bricks-bar" id="bricks-bar">
+    <span class="brick-label">Actions :</span>
+    <div class="brick-wrapper">
+      <div class="brick-btn brick-circle" title="Flows" data-brick="flows"></div>
+      <div class="brick-menu" id="menu-flows"></div>
+    </div>
+    <div class="brick-wrapper">
+      <div class="brick-btn brick-square" title="Objects" data-brick="objects"></div>
+      <div class="brick-menu" id="menu-objects"></div>
+    </div>
+    <div class="brick-wrapper">
+      <div class="brick-btn brick-triangle" title="Rules" data-brick="rules"></div>
+      <div class="brick-menu" id="menu-rules"></div>
+    </div>
+    <div class="brick-wrapper">
+      <div class="brick-btn brick-diamond" title="Time" data-brick="time"></div>
+      <div class="brick-menu" id="menu-time"></div>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" accept=".pdf,.xlsx,.xls,.csv,.docx" style="display:none">
+  <div class="input-area">
+    <div class="input-wrapper">
+      <span id="blink-cursor">_</span>
+      <input type="text" id="input" placeholder="" autofocus>
+    </div>
+    <button id="attach" title="Joindre un document (PDF, XLSX, CSV…)">📎</button>
+    <button id="send">Envoyer</button>
+  </div>
+  <div id="file-preview" style="display:none;padding:4px 12px;font-size:11px;color:#f59e0b;background:#17171c;border-top:1px solid #2b2b33;">
+    <span id="file-name"></span>
+    <span id="file-remove" style="cursor:pointer;margin-left:8px;color:#888;" title="Retirer">✕</span>
+  </div>
+
+  <? if (!embed) { ?>
   <div id="chat">
     <div class="message-ia">
       Bonjour ! 👋<br>
@@ -251,24 +416,46 @@
       <div class="time">IAstructory · maintenant</div>
     </div>
   </div>
-  
-  <div class="input-area">
-    <input type="text" id="input" placeholder="Écris ta compta..." autofocus>
-    <button id="send">Envoyer</button>
-  </div>
-  
+  <? } else { ?>
+  <div id="chat"></div>
+  <? } ?>
+
+  <? if (!embed) { ?>
   <div class="footer">
     Structory · La comptabilité qui se raconte
   </div>
-  
+  <? } ?>
+
   <script>
     const ORG_ID = "<?= orgId ?>";
     const chat = document.getElementById('chat');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('send');
+    const blinkCursor = document.getElementById('blink-cursor');
+
+    // Reste visible tant que le champ est vide (même avec le focus autofocus) — c'est une
+    // invitation à taper, pas un indicateur de focus ; disparaît dès la première frappe.
+    function updateBlinkCursor() {
+      blinkCursor.classList.toggle('hidden', input.value.length > 0);
+    }
+    input.addEventListener('input', updateBlinkCursor);
 
     let isProcessing = false;
-    
+
+    // Redimensionnement dynamique du parent (2026-07-26, retour de Stéphane : "la fenêtre de
+    // discussion doit être adaptée au volume") — voir Navigator/Code.js pour le récepteur
+    // (listener 'message', id="communicator-iframe"). #chat est en flex:1 dans un body
+    // height:100vh, donc il remplit toujours toute la hauteur donnée par l'iframe même vide —
+    // une hauteur d'iframe fixe ne peut jamais être juste dans les deux cas. Sans effet si
+    // Communicator n'est pas dans un iframe.
+    function reportHeightToParent() {
+      const inputArea = document.querySelector('.input-area');
+      const h = (inputArea ? inputArea.offsetHeight : 60) + chat.scrollHeight + 8;
+      try {
+        window.parent.postMessage({ type: 'communicator-height', height: h }, '*');
+      } catch (e) { /* pas dans un iframe, ou parent inaccessible : sans conséquence */ }
+    }
+
     function addMessage(content, type, time = null) {
       const div = document.createElement('div');
       div.className = `message-${type}`;
@@ -277,43 +464,228 @@
       div.innerHTML = `${text}<div class="time">${timeStr}</div>`;
       chat.appendChild(div);
       chat.scrollTop = chat.scrollHeight;
+      reportHeightToParent();
     }
     
+    // ── Pièce jointe (Docling via Analyzor) ──────────────────────────────
+    const fileInput    = document.getElementById('file-input');
+    const attachBtn    = document.getElementById('attach');
+    const filePreview  = document.getElementById('file-preview');
+    const fileNameSpan = document.getElementById('file-name');
+    const fileRemove   = document.getElementById('file-remove');
+    let pendingFile    = null;  // {name, base64}
+
+    attachBtn.addEventListener('click', function() { fileInput.click(); });
+
+    fileInput.addEventListener('change', function() {
+      const f = fileInput.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const b64 = e.target.result.split(',')[1];  // strip data:...;base64,
+        pendingFile = { name: f.name, base64: b64 };
+        fileNameSpan.textContent = '📎 ' + f.name;
+        filePreview.style.display = 'block';
+      };
+      reader.readAsDataURL(f);
+      fileInput.value = '';
+    });
+
+    fileRemove.addEventListener('click', function() {
+      pendingFile = null;
+      filePreview.style.display = 'none';
+    });
+
     function sendMessage() {
       const text = input.value.trim();
-      if (!text || isProcessing) return;
-      
+      if ((!text && !pendingFile) || isProcessing) return;
+
+      const displayText = text || ('📎 ' + (pendingFile ? pendingFile.name : ''));
       input.value = '';
+      updateBlinkCursor();
       isProcessing = true;
       sendBtn.disabled = true;
       sendBtn.textContent = '...';
-      
-      addMessage(text, 'user');
-      
-      google.script.run
-        .withSuccessHandler(function(result) {
-          addMessage(result, 'ia');
-          isProcessing = false;
-          sendBtn.disabled = false;
-          sendBtn.textContent = 'Envoyer';
-          input.focus();
-        })
-        .withFailureHandler(function(error) {
-          addMessage(`❌ Erreur: ${error.message}`, 'system');
-          isProcessing = false;
-          sendBtn.disabled = false;
-          sendBtn.textContent = 'Envoyer';
-          input.focus();
-        })
-        .communicate(text, ORG_ID);
+
+      addMessage(displayText, 'user');
+      filePreview.style.display = 'none';
+
+      const file = pendingFile;
+      pendingFile = null;
+
+      function onSuccess(result) {
+        addMessage(result, 'ia');
+        isProcessing = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Envoyer';
+        input.focus();
+      }
+      function onError(error) {
+        addMessage('❌ Erreur: ' + error.message, 'system');
+        isProcessing = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Envoyer';
+        input.focus();
+      }
+
+      if (file) {
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onError)
+          .communicateWithDocument(text, ORG_ID, file.name, file.base64);
+      } else {
+        google.script.run
+          .withSuccessHandler(onSuccess)
+          .withFailureHandler(onError)
+          .communicate(text, ORG_ID);
+      }
     }
-    
+
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') sendMessage();
     });
-    
+
     setTimeout(() => input.focus(), 100);
+    reportHeightToParent();
+
+    // ── Briques Objects/Rules/Flows/Time ──
+    // Objects et Time sont dynamiques : récupérés en direct depuis le vrai journal de l'org
+    // (jamais une liste inventée en dur — retour de Stéphane 2026-08-03). Flows reste pour
+    // l'instant les actions réellement câblées dans ce Communicator (structure générique,
+    // pas encore les flows métier spécifiques par org — ex. appel de fonds copro, à brancher
+    // plus tard). Chaque option de fin de chaîne PRÉ-REMPLIT le champ (jamais d'envoi
+    // automatique) pour que l'utilisateur vérifie/complète avant d'envoyer.
+    function closeAllBrickMenus() {
+      document.querySelectorAll('.brick-menu').forEach(function (m) { m.classList.remove('open'); });
+    }
+
+    function fillInput(text) {
+      input.value = text;
+      updateBlinkCursor();
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+
+    function renderMenuItems(menu, items) {
+      menu.innerHTML = items.map(function (it, i) {
+        return '<div class="brick-menu-item" data-idx="' + i + '">' + it.label + '</div>';
+      }).join('') || '<div class="brick-menu-item" style="color:#8b8b93;cursor:default;">(rien à afficher)</div>';
+      items.forEach(function (it, i) {
+        var el = menu.querySelector('[data-idx="' + i + '"]');
+        el.addEventListener('click', function (ev) {
+          ev.stopPropagation();
+          if (it.onClick) { it.onClick(); return; }
+          closeAllBrickMenus();
+          fillInput(it.text);
+        });
+      });
+    }
+
+    // Flows : structure générique (pas de flows métier spécifiques par org pour l'instant),
+    // décrits avec leur vrai pipeline technique, pas un libellé vague.
+    const FLOWS_ITEMS = [
+      { label: '💬 Ajouter une écriture', text: "j'ai payé " },
+      { label: '🔗 Écriture en partie double (vérifiée)', text: 'ecriture Achat fournitures | debit 606 45 | credit 512 45' },
+      { label: '📎 Importer un document', onClick: function () { closeAllBrickMenus(); document.getElementById('attach').click(); } },
+    ];
+
+    const RULES_ITEMS = [
+      { label: '✉️ Configurer l\'envoi d\'email', text: 'configure email host=smtp.exemple.com port=587 user=toi@exemple.com password=xxxx' },
+    ];
+
+    function setupStaticBrick(brickType, items) {
+      const btn = document.querySelector('[data-brick="' + brickType + '"]');
+      const menu = document.getElementById('menu-' + brickType);
+      if (!btn || !menu) return;
+      btn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        const wasOpen = menu.classList.contains('open');
+        closeAllBrickMenus();
+        if (!wasOpen) { renderMenuItems(menu, items); menu.classList.add('open'); }
+      });
+    }
+    setupStaticBrick('flows', FLOWS_ITEMS);
+    setupStaticBrick('rules', RULES_ITEMS);
+
+    // Objects : groupes réels du journal, récupérés à chaque clic (jamais figés). Clic sur
+    // un groupe -> sous-menu des comptes réels de ce groupe (circulation fluide demandée).
+    const objectsBtn = document.querySelector('[data-brick="objects"]');
+    const objectsMenu = document.getElementById('menu-objects');
+    let objectsCache = null; // {groupLabel: [compte, ...]} — évite de refetcher pour le "retour"
+
+    function renderObjectsGroupLevel() {
+      const groupes = Object.keys(objectsCache);
+      if (groupes.length === 0) {
+        renderMenuItems(objectsMenu, [{ label: '(journal vide)' }]);
+        return;
+      }
+      renderMenuItems(objectsMenu, groupes.map(function (label) {
+        return {
+          label: label + ' (' + objectsCache[label].length + ')',
+          onClick: function () { renderObjectsDetailLevel(label); }
+        };
+      }));
+    }
+
+    function renderObjectsDetailLevel(label) {
+      renderMenuItems(objectsMenu, [
+        { label: '← ' + label, onClick: renderObjectsGroupLevel }
+      ].concat(objectsCache[label].map(function (compte) {
+        return { label: compte, text: 'solde ' + compte };
+      })));
+    }
+
+    if (objectsBtn && objectsMenu) {
+      objectsBtn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        const wasOpen = objectsMenu.classList.contains('open');
+        closeAllBrickMenus();
+        if (wasOpen) return;
+        objectsMenu.classList.add('open');
+
+        if (objectsCache) { renderObjectsGroupLevel(); return; }
+
+        renderMenuItems(objectsMenu, [{ label: 'Chargement…' }]);
+        google.script.run.withSuccessHandler(function (result) {
+          if (!result.success) {
+            renderMenuItems(objectsMenu, [{ label: '❌ ' + result.error }]);
+            return;
+          }
+          objectsCache = result.groupes;
+          renderObjectsGroupLevel();
+        }).withFailureHandler(function (err) {
+          renderMenuItems(objectsMenu, [{ label: '❌ ' + err.message }]);
+        }).getOrgObjects(ORG_ID);
+      });
+    }
+
+    // Time : lentille temporelle réelle (aujourd'hui + années présentes dans le journal).
+    const timeBtn = document.querySelector('[data-brick="time"]');
+    const timeMenu = document.getElementById('menu-time');
+    if (timeBtn && timeMenu) {
+      timeBtn.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        const wasOpen = timeMenu.classList.contains('open');
+        closeAllBrickMenus();
+        if (wasOpen) return;
+        timeMenu.classList.add('open');
+        renderMenuItems(timeMenu, [{ label: 'Chargement…' }]);
+        google.script.run.withSuccessHandler(function (result) {
+          const items = [{ label: '📍 Aujourd\'hui', text: 'balance' }];
+          if (result.success) {
+            result.years.forEach(function (y) {
+              items.push({ label: y, text: 'dépenses ' + y });
+            });
+          }
+          renderMenuItems(timeMenu, items);
+        }).withFailureHandler(function (err) {
+          renderMenuItems(timeMenu, [{ label: '❌ ' + err.message }]);
+        }).getOrgYears(ORG_ID);
+      });
+    }
+
+    document.addEventListener('click', closeAllBrickMenus);
   </script>
   
 </body>

@@ -5,11 +5,18 @@
       {
         "userSymbol": "Bibliotheque",
         "libraryId": "1aEjQ8jEQmpTNXxeygo5QLXMUCTvmEKP5jbnHsi73krhHQBVvcqsiX9ZV",
-        "version": "0",
+        "version": "31",
         "developmentMode": true
       }
     ]
   },
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+    "https://mail.google.com/",
+    "https://www.googleapis.com/auth/script.external_request",
+    "https://www.googleapis.com/auth/script.scriptapp"
+  ],
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8",
   "webapp": {

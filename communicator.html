@@ -73,6 +73,10 @@
       overflow-y: auto;
       padding: 20px 24px;
       display: flex;
+      /* Le plus récent en haut (retour de Stéphane, 2026-08-06) : les nouveaux messages sont
+         insérés en TÊTE du DOM (voir addMessage — insertBefore, pas appendChild), pas via
+         column-reverse — ce dernier a un comportement de scroll incohérent selon les
+         navigateurs, jamais utilisé ici pour cette raison. Ordre DOM = ordre visuel. */
       flex-direction: column;
       gap: 12px;
     }
@@ -131,69 +135,37 @@
       font-style: italic;
     }
 
-    /* Briques Objects/Rules/Flows/Time — mêmes forme+couleur que precogn.org/test et
-       structory.ai/game (retour de Stéphane 2026-08-03 : rester cohérent avec ce langage
-       visuel déjà établi ailleurs dans l'écosystème). Cliquer une brique ouvre un petit menu
-       d'actions possibles pour ce type, qui pré-remplissent le champ de saisie (jamais envoyé
-       automatiquement — l'utilisateur garde la main pour vérifier/compléter avant d'envoyer). */
-    .bricks-bar {
-      display: flex;
-      gap: 14px;
-      padding: 10px 24px;
-      background: #0b0b0f;
-      border-top: 1px solid #2b2b33;
-      align-items: center;
-    }
-    .brick-btn {
-      cursor: pointer;
+    /* Commandes rapides ledger-cli (balance/journal), 2026-08-11 : retour de Stéphane,
+       la compréhension libre est trop aléatoire, il veut de vrais boutons qui déclenchent
+       directement les commandes réelles, sans passer par une interprétation devinée. */
+    .quick-actions {
       flex-shrink: 0;
-      transition: transform 0.15s ease;
+      display: flex;
+      gap: 8px;
+      padding: 12px 24px 0;
+      background: #0b0b0f;
     }
-    .brick-btn:hover { transform: scale(1.25); }
-    .brick-square {
-      width: 16px; height: 16px; border-radius: 3px;
-      background: #4285F4; box-shadow: 0 0 10px rgba(66,133,244,.5);
-    }
-    .brick-circle {
-      width: 17px; height: 17px; border-radius: 50%;
-      background: #f4f4f5; box-shadow: 0 0 10px rgba(244,244,245,.5);
-    }
-    .brick-triangle {
-      width: 0; height: 0;
-      border-left: 8px solid transparent; border-right: 8px solid transparent;
-      border-bottom: 15px solid #FF4444;
-      filter: drop-shadow(0 0 8px rgba(255,68,68,.5));
-    }
-    .brick-diamond {
-      width: 14px; height: 14px;
-      background: #CCFF00; transform: rotate(45deg); border-radius: 2px;
-      box-shadow: 0 0 10px rgba(204,255,0,.5);
-    }
-    .brick-label { font-size: 10px; color: #8b8b93; margin-right: -6px; }
 
-    .brick-menu {
-      position: absolute;
-      bottom: 100%;
-      margin-bottom: 8px;
+    .quick-btn {
       background: #17171c;
       border: 1px solid #2b2b33;
-      border-radius: 8px;
-      padding: 6px;
-      display: none;
-      min-width: 200px;
-      z-index: 20;
-      box-shadow: 0 4px 16px rgba(0,0,0,.4);
-    }
-    .brick-menu.open { display: block; }
-    .brick-menu-item {
-      padding: 8px 10px;
-      font-size: 13px;
       color: #f4f4f5;
-      border-radius: 5px;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
       cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
     }
-    .brick-menu-item:hover { background: #2b2b33; }
-    .brick-wrapper { position: relative; }
+
+    .quick-btn:hover {
+      border-color: #f59e0b;
+      color: #f59e0b;
+    }
+
+    .quick-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 
     .input-area {
       flex-shrink: 0;
@@ -355,7 +327,7 @@
     body.embed { overflow: hidden; }
     html:has(body.embed) { overflow: hidden; }
     body.embed .input-area { order: 3; }
-    body.embed .bricks-bar { order: 2; }
+    body.embed .quick-actions { order: 2; }
     body.embed #chat { order: 1; }
   </style>
 </head>
@@ -372,31 +344,16 @@
 
   <? } ?>
 
-  <div class="bricks-bar" id="bricks-bar">
-    <span class="brick-label">Actions :</span>
-    <div class="brick-wrapper">
-      <div class="brick-btn brick-circle" title="Flows" data-brick="flows"></div>
-      <div class="brick-menu" id="menu-flows"></div>
-    </div>
-    <div class="brick-wrapper">
-      <div class="brick-btn brick-square" title="Objects" data-brick="objects"></div>
-      <div class="brick-menu" id="menu-objects"></div>
-    </div>
-    <div class="brick-wrapper">
-      <div class="brick-btn brick-triangle" title="Rules" data-brick="rules"></div>
-      <div class="brick-menu" id="menu-rules"></div>
-    </div>
-    <div class="brick-wrapper">
-      <div class="brick-btn brick-diamond" title="Time" data-brick="time"></div>
-      <div class="brick-menu" id="menu-time"></div>
-    </div>
-  </div>
-
   <input type="file" id="file-input" accept=".pdf,.xlsx,.xls,.csv,.docx" style="display:none">
+  <div class="quick-actions">
+    <button type="button" class="quick-btn" id="quick-balance">📊 Balance</button>
+    <button type="button" class="quick-btn" id="quick-journal">📖 Journal</button>
+    <button type="button" class="quick-btn" id="quick-accounts">📋 Comptes</button>
+  </div>
   <div class="input-area">
     <div class="input-wrapper">
       <span id="blink-cursor">_</span>
-      <input type="text" id="input" placeholder="" autofocus>
+      <input type="text" id="input" placeholder="" <?= embed ? '' : 'autofocus' ?>>
     </div>
     <button id="attach" title="Joindre un document (PDF, XLSX, CSV…)">📎</button>
     <button id="send">Envoyer</button>
@@ -428,6 +385,7 @@
 
   <script>
     const ORG_ID = "<?= orgId ?>";
+    const IS_EMBED = <?= embed ? 'true' : 'false' ?>;
     const chat = document.getElementById('chat');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('send');
@@ -460,10 +418,16 @@
       const div = document.createElement('div');
       div.className = `message-${type}`;
       const text = content.replace(/\n/g, '<br>');
-      const timeStr = time || new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit' });
+      // Pas de session utilisateur ici (visiteur anonyme, executeAs=USER_DEPLOYING) donc pas de
+      // vrai fuseau horaire connu — UTC explicite plutôt que de deviner celui du navigateur/
+      // appareil (retour de Stéphane 2026-08-13 : affichait le fuseau Martinique par défaut).
+      const timeStr = time || new Date().toLocaleTimeString('fr', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
       div.innerHTML = `${text}<div class="time">${timeStr}</div>`;
-      chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+      // insertBefore (pas appendChild) : le nouveau message devient le premier enfant, donc le
+      // premier visible en haut — aucune gestion de scroll nécessaire, contrairement à
+      // column-reverse (retiré, comportement de scroll trop incohérent selon les navigateurs).
+      chat.insertBefore(div, chat.firstChild);
+      chat.scrollTop = 0;
       reportHeightToParent();
     }
     
@@ -510,6 +474,13 @@
       addMessage(displayText, 'user');
       filePreview.style.display = 'none';
 
+      // Sur mobile/tablette, un input.focus() appelé APRÈS une réponse réseau asynchrone
+      // (dans withSuccessHandler) n'est plus considéré comme déclenché par un geste utilisateur
+      // par le navigateur — le clavier virtuel ne se rouvre alors jamais tout seul, forçant à
+      // retaper manuellement dans le champ (retour de Stéphane, 2026-08-06). Le focus doit être
+      // repris tout de suite, ici, dans le même tap qui a lancé l'envoi — pas après coup.
+      input.focus();
+
       const file = pendingFile;
       pendingFile = null;
 
@@ -518,14 +489,12 @@
         isProcessing = false;
         sendBtn.disabled = false;
         sendBtn.textContent = 'Envoyer';
-        input.focus();
       }
       function onError(error) {
         addMessage('❌ Erreur: ' + error.message, 'system');
         isProcessing = false;
         sendBtn.disabled = false;
         sendBtn.textContent = 'Envoyer';
-        input.focus();
       }
 
       if (file) {
@@ -541,151 +510,70 @@
       }
     }
 
-    sendBtn.addEventListener('click', sendMessage);
+    // Sur tablette, taper "Envoyer" pendant que le clavier virtuel est ouvert peut faire perdre
+    // le focus du champ (le clavier se ferme, la mise en page bouge sous le doigt) — le
+    // navigateur annule alors ce premier tap comme un défilement plutôt qu'un clic, d'où
+    // "il faut taper deux fois" (retour de Stéphane, 2026-08-06). Fix : empêcher le bouton de
+    // voler le focus (preventDefault sur mousedown/touchstart, qui arrivent AVANT ce
+    // basculement), et déclencher l'envoi dès ce premier événement plutôt que d'attendre le
+    // "click" qui arrive après coup, une fois la mise en page déjà perturbée.
+    // touchstart/mousedown ET click restent TOUS actifs (le garde-fou sendTriggered évite
+    // qu'un même tap déclenche un envoi en double) — un seul chemin qui échoue silencieusement
+    // selon le navigateur/webview aurait pu laisser le bouton totalement inerte.
+    let sendTriggered = false;
+    function triggerSend() {
+      if (sendTriggered) return;
+      sendTriggered = true;
+      setTimeout(function () { sendTriggered = false; }, 400);
+      sendMessage();
+    }
+    sendBtn.addEventListener('touchstart', triggerSend, { passive: true });
+    sendBtn.addEventListener('mousedown', triggerSend);
+    sendBtn.addEventListener('click', triggerSend);
+
     input.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') sendMessage();
     });
 
-    setTimeout(() => input.focus(), 100);
+    // ── Commandes rapides ledger-cli (balance/journal) ───────────────────
+    var quickBtns = [
+      document.getElementById('quick-balance'),
+      document.getElementById('quick-journal'),
+      document.getElementById('quick-accounts')
+    ];
+    function setQuickBtnsDisabled(disabled) {
+      quickBtns.forEach(function (b) { b.disabled = disabled; });
+      sendBtn.disabled = disabled;
+    }
+    function runQuickCommand(fnName, label) {
+      if (isProcessing) return;
+      isProcessing = true;
+      setQuickBtnsDisabled(true);
+      addMessage(label, 'user');
+      google.script.run
+        .withSuccessHandler(function (result) {
+          addMessage(result, 'ia');
+          isProcessing = false;
+          setQuickBtnsDisabled(false);
+        })
+        .withFailureHandler(function (error) {
+          addMessage('❌ Erreur: ' + error.message, 'system');
+          isProcessing = false;
+          setQuickBtnsDisabled(false);
+        })[fnName](ORG_ID);
+    }
+    document.getElementById('quick-balance').addEventListener('click', function () { runQuickCommand('quickBalance', '📊 Balance'); });
+    document.getElementById('quick-journal').addEventListener('click', function () { runQuickCommand('quickJournal', '📖 Journal'); });
+    document.getElementById('quick-accounts').addEventListener('click', function () { runQuickCommand('quickAccounts', '📋 Comptes'); });
+
+    // En embed (colonne Navigator), ce focus au chargement de la page faisait défiler la page
+    // PARENTE jusqu'à l'iframe Communicator sur mobile/tablette (le navigateur amène tout champ
+    // qui reçoit le focus dans le viewport, même à travers un iframe) — l'utilisateur "atterrissait"
+    // en bas de Navigator sans avoir rien demandé (retour de Stéphane, 2026-08-06). Jamais en embed ;
+    // toujours en usage autonome (comportement voulu, inchangé).
+    if (!IS_EMBED) setTimeout(() => input.focus(), 100);
     reportHeightToParent();
 
-    // ── Briques Objects/Rules/Flows/Time ──
-    // Objects et Time sont dynamiques : récupérés en direct depuis le vrai journal de l'org
-    // (jamais une liste inventée en dur — retour de Stéphane 2026-08-03). Flows reste pour
-    // l'instant les actions réellement câblées dans ce Communicator (structure générique,
-    // pas encore les flows métier spécifiques par org — ex. appel de fonds copro, à brancher
-    // plus tard). Chaque option de fin de chaîne PRÉ-REMPLIT le champ (jamais d'envoi
-    // automatique) pour que l'utilisateur vérifie/complète avant d'envoyer.
-    function closeAllBrickMenus() {
-      document.querySelectorAll('.brick-menu').forEach(function (m) { m.classList.remove('open'); });
-    }
-
-    function fillInput(text) {
-      input.value = text;
-      updateBlinkCursor();
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }
-
-    function renderMenuItems(menu, items) {
-      menu.innerHTML = items.map(function (it, i) {
-        return '<div class="brick-menu-item" data-idx="' + i + '">' + it.label + '</div>';
-      }).join('') || '<div class="brick-menu-item" style="color:#8b8b93;cursor:default;">(rien à afficher)</div>';
-      items.forEach(function (it, i) {
-        var el = menu.querySelector('[data-idx="' + i + '"]');
-        el.addEventListener('click', function (ev) {
-          ev.stopPropagation();
-          if (it.onClick) { it.onClick(); return; }
-          closeAllBrickMenus();
-          fillInput(it.text);
-        });
-      });
-    }
-
-    // Flows : structure générique (pas de flows métier spécifiques par org pour l'instant),
-    // décrits avec leur vrai pipeline technique, pas un libellé vague.
-    const FLOWS_ITEMS = [
-      { label: '💬 Ajouter une écriture', text: "j'ai payé " },
-      { label: '🔗 Écriture en partie double (vérifiée)', text: 'ecriture Achat fournitures | debit 606 45 | credit 512 45' },
-      { label: '📎 Importer un document', onClick: function () { closeAllBrickMenus(); document.getElementById('attach').click(); } },
-    ];
-
-    const RULES_ITEMS = [
-      { label: '✉️ Configurer l\'envoi d\'email', text: 'configure email host=smtp.exemple.com port=587 user=toi@exemple.com password=xxxx' },
-    ];
-
-    function setupStaticBrick(brickType, items) {
-      const btn = document.querySelector('[data-brick="' + brickType + '"]');
-      const menu = document.getElementById('menu-' + brickType);
-      if (!btn || !menu) return;
-      btn.addEventListener('click', function (ev) {
-        ev.stopPropagation();
-        const wasOpen = menu.classList.contains('open');
-        closeAllBrickMenus();
-        if (!wasOpen) { renderMenuItems(menu, items); menu.classList.add('open'); }
-      });
-    }
-    setupStaticBrick('flows', FLOWS_ITEMS);
-    setupStaticBrick('rules', RULES_ITEMS);
-
-    // Objects : groupes réels du journal, récupérés à chaque clic (jamais figés). Clic sur
-    // un groupe -> sous-menu des comptes réels de ce groupe (circulation fluide demandée).
-    const objectsBtn = document.querySelector('[data-brick="objects"]');
-    const objectsMenu = document.getElementById('menu-objects');
-    let objectsCache = null; // {groupLabel: [compte, ...]} — évite de refetcher pour le "retour"
-
-    function renderObjectsGroupLevel() {
-      const groupes = Object.keys(objectsCache);
-      if (groupes.length === 0) {
-        renderMenuItems(objectsMenu, [{ label: '(journal vide)' }]);
-        return;
-      }
-      renderMenuItems(objectsMenu, groupes.map(function (label) {
-        return {
-          label: label + ' (' + objectsCache[label].length + ')',
-          onClick: function () { renderObjectsDetailLevel(label); }
-        };
-      }));
-    }
-
-    function renderObjectsDetailLevel(label) {
-      renderMenuItems(objectsMenu, [
-        { label: '← ' + label, onClick: renderObjectsGroupLevel }
-      ].concat(objectsCache[label].map(function (compte) {
-        return { label: compte, text: 'solde ' + compte };
-      })));
-    }
-
-    if (objectsBtn && objectsMenu) {
-      objectsBtn.addEventListener('click', function (ev) {
-        ev.stopPropagation();
-        const wasOpen = objectsMenu.classList.contains('open');
-        closeAllBrickMenus();
-        if (wasOpen) return;
-        objectsMenu.classList.add('open');
-
-        if (objectsCache) { renderObjectsGroupLevel(); return; }
-
-        renderMenuItems(objectsMenu, [{ label: 'Chargement…' }]);
-        google.script.run.withSuccessHandler(function (result) {
-          if (!result.success) {
-            renderMenuItems(objectsMenu, [{ label: '❌ ' + result.error }]);
-            return;
-          }
-          objectsCache = result.groupes;
-          renderObjectsGroupLevel();
-        }).withFailureHandler(function (err) {
-          renderMenuItems(objectsMenu, [{ label: '❌ ' + err.message }]);
-        }).getOrgObjects(ORG_ID);
-      });
-    }
-
-    // Time : lentille temporelle réelle (aujourd'hui + années présentes dans le journal).
-    const timeBtn = document.querySelector('[data-brick="time"]');
-    const timeMenu = document.getElementById('menu-time');
-    if (timeBtn && timeMenu) {
-      timeBtn.addEventListener('click', function (ev) {
-        ev.stopPropagation();
-        const wasOpen = timeMenu.classList.contains('open');
-        closeAllBrickMenus();
-        if (wasOpen) return;
-        timeMenu.classList.add('open');
-        renderMenuItems(timeMenu, [{ label: 'Chargement…' }]);
-        google.script.run.withSuccessHandler(function (result) {
-          const items = [{ label: '📍 Aujourd\'hui', text: 'balance' }];
-          if (result.success) {
-            result.years.forEach(function (y) {
-              items.push({ label: y, text: 'dépenses ' + y });
-            });
-          }
-          renderMenuItems(timeMenu, items);
-        }).withFailureHandler(function (err) {
-          renderMenuItems(timeMenu, [{ label: '❌ ' + err.message }]);
-        }).getOrgYears(ORG_ID);
-      });
-    }
-
-    document.addEventListener('click', closeAllBrickMenus);
   </script>
   
 </body>

@@ -398,6 +398,30 @@ function communicate(text, orgId) {
       }
     }
 
+    // Simple accusé de réception ("ok", "merci", "parfait"...) juste après une écriture
+    // validée : réponse déterministe, jamais envoyée au LLM (qui n'a pas connaissance de la
+    // validation et peut repartir sur une intro hors-sujet — retour Stéphane 2026-08-11).
+    var ackKey = 'comm_last_entry_ok_' + orgId;
+    if (/^(ok|okay|d'?accord|merci|super|parfait|nickel|cool|top|impec(?:cable)?|ça marche|ca marche|c'?est bon|bien|👍|👌)[\s.!?]*$/i.test(text.trim())) {
+      if (cache.get(ackKey)) {
+        cache.remove(ackKey);
+        return "👍 C'est noté, l'écriture est bien enregistrée dans le journal.";
+      }
+    }
+
+    // "balance"/"journal" tapés en clair : appel direct ledger-cli, jamais le LLM (celui-ci
+    // classifiait parfois "balance" en réponse hors-sujet — retour Stéphane 2026-08-11, testé
+    // en direct avec "donne moi ma balance stp"). Pas de garde sur "écriture"/"solde X" : ces
+    // formulations sont déjà interceptées plus haut / gérées par analyzorUnderstand.
+    if (!/^ecriture\b|^écriture\b/i.test(text.trim()) && !/\bsolde\b/i.test(text)) {
+      if (/\bbalance\b/i.test(text)) return quickBalance(orgId);
+      if (/\b(journal|registre|mouvements?)\b/i.test(text)) return quickJournal(orgId);
+      // Pluriel "comptes" (liste) — distinct de "compte X" singulier (solde d'un compte précis,
+      // déjà géré ci-dessus/par analyzorUnderstand). Retour Stéphane 2026-08-13 : le LLM
+      // inventait la liste (compte 431 manquant) au lieu de lire le vrai journal.
+      if (/\bcomptes\b/i.test(text)) return quickAccounts(orgId);
+    }
+
     // Analyzor comprend, route, et exécute les queries — le Communicator ne fait que relayer
     var result = Bibliotheque.analyzorUnderstand(orgId, text, lastMsg, '');
 
@@ -531,6 +555,64 @@ function _sendUnderstandingFailureDebugEmail(orgId, text, lastMsg, lastResp) {
 }
 
 // ================================================================
+// COMMANDES RAPIDES LEDGER-CLI (déterministe, jamais de passage par le LLM) — retour de
+// Stéphane 2026-08-11 : la compréhension libre est trop aléatoire ("donne moi ma balance
+// stp" a raté), il veut de vrais boutons qui exposent directement les commandes ledger-cli
+// (balance, register) plutôt qu'une interprétation devinée. Appelées à la fois par les
+// boutons du sidebar (communicator.html) ET par un mot-clé exact tapé au clavier.
+// ================================================================
+
+function _escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function _tailLines(text, maxLines) {
+  var lines = text.split('\n');
+  if (lines.length <= maxLines) return text;
+  var hidden = lines.length - maxLines;
+  return '… (' + hidden + ' ligne' + (hidden > 1 ? 's' : '') + ' précédente' + (hidden > 1 ? 's' : '') + ' masquée' + (hidden > 1 ? 's' : '') + ')\n' +
+    lines.slice(lines.length - maxLines).join('\n');
+}
+
+function _formatLedgerBlock(title, output) {
+  if (!output || !output.trim()) return title + '\n(aucune donnée pour le moment)';
+  return title + '\n<pre style="font-family:\'Courier New\',monospace;font-size:12px;white-space:pre-wrap;margin:6px 0 0;">' +
+    _escapeHtml(output) + '</pre>';
+}
+
+/** Commande ledger-cli "balance" brute — vraie sortie, aucune reformulation LLM. */
+function quickBalance(orgId) {
+  var result = Bibliotheque.ledgerQuery(orgId, 'balance', []);
+  if (!result.success) return '❌ Erreur balance : ' + (result.error || 'inconnue');
+  return _formatLedgerBlock('📊 Balance', result.output);
+}
+
+/** Commande ledger-cli "register" (mouvements chronologiques) — dernières lignes seulement dans
+ * le chat (lisibilité), avec un lien vers le journal COMPLET (2026-08-13, retour de Stéphane :
+ * "je veux qu'on puisse en permanence... accéder au journal... en entier pas des morceaux") —
+ * le lien pointe vers Navigator (?download=journal), protégé par la vraie session/appartenance,
+ * jamais un accès direct à ledger_api qui lui n'a aucune protection. */
+function quickJournal(orgId) {
+  var result = Bibliotheque.ledgerQuery(orgId, 'register', []);
+  if (!result.success) return '❌ Erreur journal : ' + (result.error || 'inconnue');
+  var fullLink = NAVIGATOR_URL + '?orgId=' + encodeURIComponent(orgId) + '&download=journal';
+  return _formatLedgerBlock('📖 Journal — dernières écritures', _tailLines(result.output, 25))
+    + '\n<a href="' + fullLink + '" target="_blank">📥 Voir le journal complet</a>';
+}
+
+/**
+ * Commande ledger-cli "accounts" — vraie liste des comptes du journal. Retour de Stéphane
+ * 2026-08-13 : "liste des comptes existants ?" a été répondu par le LLM avec une liste
+ * inventée (compte 431:Organismes-sociaux manquant, réellement présent dans le journal) —
+ * même remède que balance/journal : plus jamais le LLM pour une question à réponse exacte.
+ */
+function quickAccounts(orgId) {
+  var result = Bibliotheque.ledgerQuery(orgId, 'accounts', []);
+  if (!result.success) return '❌ Erreur comptes : ' + (result.error || 'inconnue');
+  return _formatLedgerBlock('📋 Comptes du journal', result.output);
+}
+
+// ================================================================
 // ÉCRITURE
 // ================================================================
 
@@ -553,12 +635,17 @@ function handleAddEntry(orgId, parsed) {
 
   const confiancePct = Math.round((result.confidence || 0) * 100);
   let message = (isFirstEntry ? '📁 Je viens de créer ton journal comptable — première écriture enregistrée !\n' : '') +
-    `✅ Écriture ajoutée : ${parsed.montant}€ — ${parsed.libelle}\n` +
+    `✅ Écriture correctement comptabilisée dans le journal : ${parsed.montant}€ — ${parsed.libelle}\n` +
     `📂 Compte : ${result.compte} ${result.compteNom} (confiance ${confiancePct}%)`;
 
   if (result.confidence < 0.5) {
     message += "\n⚠️ Confiance basse — vérifie ce compte, je ne suis pas sûr à 100%.";
   }
+
+  // Mémorise qu'une écriture vient d'être validée (10 min) : sert à répondre correctement
+  // à un simple "ok"/"merci" juste après, au lieu de renvoyer une réponse LLM hors-sujet
+  // qui redemarre l'intro de l'assistant (retour Stéphane 2026-08-11). Voir communicate().
+  CacheService.getScriptCache().put('comm_last_entry_ok_' + orgId, '1', 600);
 
   return message;
 }

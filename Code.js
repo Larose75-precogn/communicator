@@ -144,7 +144,7 @@ function doGet(e) {
 // direct depuis l'Executor (Python). Endpoint HTTP dédié, réutilise le connector de sortie
 // "email" comme un cas parmi d'autres prévus par Stéphane (imprimer, WhatsApp...) : contrat
 // {orgId, payload} -> {success, error?}, jamais de logique métier ici, juste l'envoi.
-const EMAIL_SERVICE_KEY = "***REMOVED_SERVICE_KEY***"; // même clé que ConnectorAccount.js
+const EMAIL_SERVICE_KEY = PropertiesService.getScriptProperties().getProperty('STRUCTORY_SERVICE_KEY') || ''; // même propriété que Bibliotheque (STRUCTORY_SERVICE_KEY)
 
 function doPost(e) {
   try {

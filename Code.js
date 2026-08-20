@@ -19,7 +19,7 @@ const DEFAULT_ORG_ID = 'structory_default';
 // consecutives quasi-identiques a des messages differents = signe qu'Analyzor a decroche.
 // Voir communicate() / _isNearlyIdenticalResponse() / _handleUnderstandingFailure().
 const NAVIGATOR_URL = 'https://script.google.com/macros/s/AKfycbzJ_mGTi4mYSVAMBZIWJ1ybbEaDyOaF6AGrzZo-VU8mv7jp5n5YzE2vCJcCz4JBX3TEkQ/exec';
-const DEBUG_EMAIL_ADDRESS = 'contact@example.com';
+const DEBUG_EMAIL_ADDRESS = PropertiesService.getScriptProperties().getProperty('DEBUG_EMAIL_ADDRESS') || '';
 
 // ================================================================
 // Comptes patrimoine — brique Compte réelle (Analyzor/DriveApp), plus le Sheet V0
@@ -551,7 +551,7 @@ function _sendUnderstandingFailureDebugEmail(orgId, text, lastMsg, lastResp) {
     "mots normalisés) alors que le message de l'utilisateur a changé. Voir Code.js::_isNearlyIdenticalResponse."
   ].join('\n');
 
-  MailApp.sendEmail(DEBUG_EMAIL_ADDRESS, subject, body);
+  if (DEBUG_EMAIL_ADDRESS) { MailApp.sendEmail(DEBUG_EMAIL_ADDRESS, subject, body); }
 }
 
 // ================================================================

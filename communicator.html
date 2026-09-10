@@ -135,15 +135,62 @@
       font-style: italic;
     }
 
-    /* Commandes rapides ledger-cli (balance/journal), 2026-08-11 : retour de Stéphane,
-       la compréhension libre est trop aléatoire, il veut de vrais boutons qui déclenchent
-       directement les commandes réelles, sans passer par une interprétation devinée. */
-    .quick-actions {
+    /* Menu de commandes structuré par les 4 briques fondamentales PreCogn (2026-09-10, retour
+       de Stéphane : les commandes ne doivent plus être en vrac mais rangées par type de brique).
+       Objets (carré bleu) = ce qui est stocké dans le BYOS de l'org (ici : le journal.ledger,
+       le seul vrai objet côté ledger). Flows (rond blanc) = les actions/calculs ledger-cli qui
+       n'existent qu'à l'appel (balance, comptes, mouvements/register). Time (losange jaune) et
+       Rules (triangle rouge) : entrées prévues, contenu à venir. */
+    .brick-menu {
       flex-shrink: 0;
       display: flex;
       gap: 8px;
       padding: 12px 24px 0;
       background: #0b0b0f;
+    }
+
+    .brick-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #17171c;
+      border: 1px solid #2b2b33;
+      color: #f4f4f5;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .brick-btn:hover { border-color: #52525b; }
+    .brick-btn.active { border-color: #f59e0b; background: #1f1f26; }
+
+    /* Signatures visuelles des briques (formes + couleurs PreCogn). */
+    .brick-glyph { font-size: 12px; line-height: 1; }
+    .brick-glyph.obj  { color: #3b82f6; } /* Objets  : carré bleu   */
+    .brick-glyph.flow { color: #ffffff; } /* Flows   : rond blanc   */
+    .brick-glyph.time { color: #eab308; } /* Time    : losange jaune */
+    .brick-glyph.rule { color: #ef4444; } /* Rules   : triangle rouge */
+
+    /* Sous-menu : les commandes de la brique sélectionnée. */
+    .brick-submenu {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 24px 0;
+      background: #0b0b0f;
+    }
+    .brick-submenu:empty { display: none; }
+
+    .brick-hint {
+      align-self: center;
+      color: #9ca3af;
+      font-size: 12px;
+      font-style: italic;
     }
 
     .quick-btn {
@@ -326,9 +373,10 @@
     /* Embed dans sidebar Sheets : pas de scrollbar vertical sur la page */
     body.embed { overflow: hidden; }
     html:has(body.embed) { overflow: hidden; }
-    body.embed .input-area { order: 3; }
-    body.embed .quick-actions { order: 2; }
     body.embed #chat { order: 1; }
+    body.embed .brick-menu { order: 2; }
+    body.embed .brick-submenu { order: 3; }
+    body.embed .input-area { order: 4; }
   </style>
 </head>
 
@@ -345,11 +393,13 @@
   <? } ?>
 
   <input type="file" id="file-input" accept=".pdf,.xlsx,.xls,.csv,.docx" style="display:none">
-  <div class="quick-actions">
-    <button type="button" class="quick-btn" id="quick-balance">📊 Balance</button>
-    <button type="button" class="quick-btn" id="quick-journal">📖 Journal</button>
-    <button type="button" class="quick-btn" id="quick-accounts">📋 Comptes</button>
+  <div class="brick-menu">
+    <button type="button" class="brick-btn" data-brick="objets"><span class="brick-glyph obj">■</span>Objets</button>
+    <button type="button" class="brick-btn" data-brick="flows"><span class="brick-glyph flow">●</span>Flows</button>
+    <button type="button" class="brick-btn" data-brick="time"><span class="brick-glyph time">◆</span>Time</button>
+    <button type="button" class="brick-btn" data-brick="rules"><span class="brick-glyph rule">▲</span>Rules</button>
   </div>
+  <div class="brick-submenu" id="brick-submenu"></div>
   <div class="input-area">
     <div class="input-wrapper">
       <span id="blink-cursor">_</span>
@@ -535,14 +585,39 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    // ── Commandes rapides ledger-cli (balance/journal) ───────────────────
-    var quickBtns = [
-      document.getElementById('quick-balance'),
-      document.getElementById('quick-journal'),
-      document.getElementById('quick-accounts')
-    ];
+    // ── Menu de commandes par briques PreCogn (Objets / Flows / Time / Rules) ──
+    // Objets = ce qui est stocké comme objet dans le BYOS de l'org (le journal.ledger).
+    // Flows = les commandes ledger-cli qui recalculent une projection à chaque appel
+    // (balance, comptes, mouvements/register) — un flow = une action. Time et Rules :
+    // entrées prévues, contenu à définir (affichent pour l'instant un rappel).
+    var BRICK_MENU = {
+      objets: {
+        commands: [
+          { label: '📖 Journal (objet complet)', fn: 'objectJournal' }
+        ]
+      },
+      flows: {
+        commands: [
+          { label: '📊 Balance', fn: 'quickBalance' },
+          { label: '📋 Comptes', fn: 'quickAccounts' },
+          { label: '📖 Mouvements', fn: 'quickJournal' }
+        ]
+      },
+      time: {
+        hint: '⏳ Time — bientôt : soldes figés à une date (balance au 30/06, journal au 28/09…).'
+      },
+      rules: {
+        hint: '⏳ Rules — bientôt : règles de classement et contrôles automatiques.'
+      }
+    };
+
+    var brickBtns = Array.prototype.slice.call(document.querySelectorAll('.brick-btn'));
+    var submenu = document.getElementById('brick-submenu');
+    var activeBrick = null;
+
     function setQuickBtnsDisabled(disabled) {
-      quickBtns.forEach(function (b) { b.disabled = disabled; });
+      brickBtns.forEach(function (b) { b.disabled = disabled; });
+      submenu.querySelectorAll('.quick-btn').forEach(function (b) { b.disabled = disabled; });
       sendBtn.disabled = disabled;
     }
     function runQuickCommand(fnName, label) {
@@ -562,9 +637,46 @@
           setQuickBtnsDisabled(false);
         })[fnName](ORG_ID);
     }
-    document.getElementById('quick-balance').addEventListener('click', function () { runQuickCommand('quickBalance', '📊 Balance'); });
-    document.getElementById('quick-journal').addEventListener('click', function () { runQuickCommand('quickJournal', '📖 Journal'); });
-    document.getElementById('quick-accounts').addEventListener('click', function () { runQuickCommand('quickAccounts', '📋 Comptes'); });
+
+    function renderSubmenu(brick) {
+      submenu.innerHTML = '';
+      var def = BRICK_MENU[brick];
+      if (!def) return;
+      if (def.commands) {
+        def.commands.forEach(function (cmd) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'quick-btn';
+          b.textContent = cmd.label;
+          b.addEventListener('click', function () { runQuickCommand(cmd.fn, cmd.label); });
+          submenu.appendChild(b);
+        });
+      } else if (def.hint) {
+        var span = document.createElement('span');
+        span.className = 'brick-hint';
+        span.textContent = def.hint;
+        submenu.appendChild(span);
+      }
+    }
+
+    function selectBrick(brick, btn) {
+      if (activeBrick === brick) {
+        // Re-clic sur la brique active : on referme le sous-menu.
+        activeBrick = null;
+        btn.classList.remove('active');
+        submenu.innerHTML = '';
+        reportHeightToParent();
+        return;
+      }
+      activeBrick = brick;
+      brickBtns.forEach(function (b) { b.classList.toggle('active', b === btn); });
+      renderSubmenu(brick);
+      reportHeightToParent();
+    }
+
+    brickBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () { selectBrick(btn.getAttribute('data-brick'), btn); });
+    });
 
     // En embed (colonne Navigator), ce focus au chargement de la page faisait défiler la page
     // PARENTE jusqu'à l'iframe Communicator sur mobile/tablette (le navigateur amène tout champ

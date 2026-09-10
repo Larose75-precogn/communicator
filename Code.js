@@ -257,7 +257,7 @@ function sendReportEmail(to, payload) {
 function communicateWithDocument(text, orgId, filename, base64content) {
   orgId = orgId || DEFAULT_ORG_ID;
   Logger.log('📎 [' + orgId + '] doc=' + filename + ' msg=' + text);
-  var ANALYZOR = 'http://213.32.16.118:8000';
+  var ANALYZOR = 'https://api.precogn.org';
   try {
     var resp = UrlFetchApp.fetch(ANALYZOR + '/api/analyzor/understand', {
       method: 'POST',
@@ -612,6 +612,21 @@ function quickAccounts(orgId) {
   return _formatLedgerBlock('📋 Comptes du journal', result.output);
 }
 
+/**
+ * Brique OBJETS — le journal en tant qu'objet (2026-09-10, menu à briques PreCogn). Ici on
+ * ne recalcule pas une projection : on lit le contenu persisté du journal.ledger (le seul vrai
+ * objet stocké dans le BYOS de l'org — `ledger print` ré-émet les écritures telles qu'elles
+ * sont enregistrées, à la différence de `register`/`balance`/`accounts` qui sont des résultats
+ * de flow recalculés). Aperçu tronqué dans le chat + lien vers le journal complet, protégé par
+ * la session Navigator (jamais un accès direct à ledger_api). */
+function objectJournal(orgId) {
+  var result = Bibliotheque.ledgerQuery(orgId, 'print', []);
+  if (!result.success) return '❌ Erreur journal : ' + (result.error || 'inconnue');
+  var fullLink = NAVIGATOR_URL + '?orgId=' + encodeURIComponent(orgId) + '&download=journal';
+  return _formatLedgerBlock('📖 Journal (objet complet) — dernières écritures', _tailLines(result.output, 30))
+    + '\n<a href="' + fullLink + '" target="_blank">📥 Télécharger le journal complet</a>';
+}
+
 // ================================================================
 // ÉCRITURE
 // ================================================================
@@ -711,7 +726,7 @@ function handleSetIban(orgId, text) {
   }
 
   try {
-    UrlFetchApp.fetch('http://213.32.16.118:8000/api/journal/log', {
+    UrlFetchApp.fetch('https://api.precogn.org/api/journal/log', {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify({
@@ -735,7 +750,7 @@ function handleSetIban(orgId, text) {
  * Commande : "envoyer appel" ou "appel de fonds email [Q4]"
  */
 function handleAppelFondsEmail(orgId, text) {
-  var ANALYZOR = 'http://213.32.16.118:8000';
+  var ANALYZOR = 'https://api.precogn.org';
 
   // Détecter trimestre optionnel (ex: "envoyer appel Q4")
   var trimMatch = text.match(/\bQ[1-4]\b/i);
@@ -793,7 +808,7 @@ function sendAppelFondsEmails(orgId, data) {
   // Log dans le journal Structory (non-comptable — # prefix)
   if (sent.length) {
     try {
-      UrlFetchApp.fetch('http://213.32.16.118:8000/api/journal/log', {
+      UrlFetchApp.fetch('https://api.precogn.org/api/journal/log', {
         method: 'post',
         contentType: 'application/json',
         payload: JSON.stringify({

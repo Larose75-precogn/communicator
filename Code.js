@@ -420,6 +420,8 @@ function communicate(text, orgId) {
       // déjà géré ci-dessus/par analyzorUnderstand). Retour Stéphane 2026-08-13 : le LLM
       // inventait la liste (compte 431 manquant) au lieu de lire le vrai journal.
       if (/\bcomptes\b/i.test(text)) return quickAccounts(orgId);
+      // "règles" (brique Rules) — vraies Rule bricks du module, jamais inventées par le LLM.
+      if (/\br[eè]gles?\b/i.test(text)) return quickRules(orgId);
     }
 
     // Analyzor comprend, route, et exécute les queries — le Communicator ne fait que relayer
@@ -625,6 +627,33 @@ function objectJournal(orgId) {
   var fullLink = NAVIGATOR_URL + '?orgId=' + encodeURIComponent(orgId) + '&download=journal';
   return _formatLedgerBlock('📖 Journal (objet complet) — dernières écritures', _tailLines(result.output, 30))
     + '\n<a href="' + fullLink + '" target="_blank">📥 Télécharger le journal complet</a>';
+}
+
+function _truncateText(s, maxChars) {
+  s = String(s || '').replace(/\s+/g, ' ').trim();
+  return s.length > maxChars ? s.slice(0, maxChars - 1) + '…' : s;
+}
+
+/**
+ * Brique RULES — les vraies règles (Rule bricks) du module de l'org, lues via
+ * Bibliotheque.analyzorGetRules → GET /api/analyzor/rules (jamais inventées : mêmes bricks
+ * JSON que celles qui pilotent la classification/le chat côté serveur). Read-only : afficher
+ * ce qui s'applique. On ne garde que les bricks de type "Rule" (le module contient aussi des
+ * Objects). Le détail/édition d'une règle viendra ensuite. */
+function quickRules(orgId) {
+  var res = Bibliotheque.analyzorGetRules(orgId);
+  if (!res || !res.success) return '❌ Erreur règles : ' + ((res && res.error) || 'indisponible');
+  var rules = (res.rules || []).filter(function (b) { return b && b.type === 'Rule'; });
+  var header = '▲ Règles en vigueur' + (res.module ? ' — module ' + res.module : '');
+  if (!rules.length) return _formatLedgerBlock(header, '(aucune règle pour cette organisation)');
+  var body = rules.map(function (b) {
+    var title = b.title || b.titre || b.nom || b.id || '(sans titre)';
+    var status = b.status ? ' · ' + b.status : '';
+    var line = '• ' + title + '  [' + (b.id || '?') + ']' + status;
+    if (b.description) line += '\n   ' + _truncateText(b.description, 160);
+    return line;
+  }).join('\n');
+  return _formatLedgerBlock(header, body);
 }
 
 // ================================================================

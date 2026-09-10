@@ -594,7 +594,9 @@
         hint: '⏳ Time — bientôt : soldes figés à une date (balance au 30/06, journal au 28/09…).'
       },
       rules: {
-        hint: '⏳ Rules — bientôt : règles de classement et contrôles automatiques.'
+        commands: [
+          { label: '▲ Règles en vigueur', fn: 'quickRules' }
+        ]
       }
     };
 

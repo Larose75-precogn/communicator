@@ -133,7 +133,7 @@ function doGet(e) {
   template.brandName = Bibliotheque.accountResolveBrandName(orgId);
 
   return template.evaluate()
-    .setTitle(template.brandName + ' - Raconte-nous ta compta')
+    .setTitle(template.brandName)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 

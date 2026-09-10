@@ -387,7 +387,6 @@
 
   <div class="header">
     <a class="header-title" href="https://structory.ai" target="_blank" rel="noopener"><?= brandName ?></a>
-    <div class="header-subtitle">Raconte-nous ta compta</div>
   </div>
 
   <? } ?>
@@ -413,19 +412,7 @@
     <span id="file-remove" style="cursor:pointer;margin-left:8px;color:#888;" title="Retirer">✕</span>
   </div>
 
-  <? if (!embed) { ?>
-  <div id="chat">
-    <div class="message-ia">
-      Bonjour ! 👋<br>
-      Je suis <strong>IAstructory</strong>.<br>
-      Raconte-moi ta compta en français, je m'occupe du reste.<br><br>
-      💡 <em>Exemple : "j'ai payé 45€ au restaurant"</em>
-      <div class="time">IAstructory · maintenant</div>
-    </div>
-  </div>
-  <? } else { ?>
   <div id="chat"></div>
-  <? } ?>
 
   <? if (!embed) { ?>
   <div class="footer">

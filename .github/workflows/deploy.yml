@@ -1,0 +1,31 @@
+# Robot de deploiement du module Communicator (Google Apps Script).
+# Se declenche a l arrivee de code sur "main" (donc apres ta fusion).
+# Utilise le laissez-passer clasp range dans le secret CLASPRC_JSON.
+name: Deployer Communicator (Apps Script)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  deployer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Laissez-passer clasp
+        run: printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+      - name: Config clasp
+        run: |
+          cat > .clasp.json <<EOF
+          {"scriptId":"1aT8zs51HqFWXFMuEbFoJU727rvVBrQbD4flj51-68cRg-TZ0PleKOPGh","rootDir":""}
+          EOF
+      - name: Publier + deployer
+        run: |
+          npx --yes @google/clasp@3.3.0 push -f
+          npx --yes @google/clasp@3.3.0 deploy -i AKfycbzoClf0eKI8NwrbKR3sFlw58AD_TPNiRfSvrwQccUkP8lhiE1c-PaYVz6GmJccza0OWhg -d "deploiement auto (CI)"
